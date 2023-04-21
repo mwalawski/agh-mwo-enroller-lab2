@@ -4,6 +4,7 @@ import com.company.enroller.App;
 import com.company.enroller.persistence.ParticipantService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -17,7 +18,9 @@ public class WebSecurity extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
         http.csrf().disable()
                 .authorizeRequests()
-                .anyRequest().permitAll()
+                .antMatchers(HttpMethod.POST, "/participants").permitAll()
+                .antMatchers("/tokens").permitAll()
+                .antMatchers("/**").authenticated()
                 .and()
                 .addFilterBefore(
                         new JWTAuthenticationFilter(
@@ -26,7 +29,9 @@ public class WebSecurity extends WebSecurityConfigurerAdapter {
                                 issuer,
                                 tokenExpiration),
                         UsernamePasswordAuthenticationFilter.class)
-                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .and()
+                .addFilter(new JWTAuthorizationFilter(authenticationManager(), secret));
     }
 
     @Autowired
